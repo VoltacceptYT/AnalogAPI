@@ -1,4 +1,4 @@
-package net.verotek.analog_movement.mixin;
+package com.voltaccept.AnalogAPI.mixin;
 
 //? if <1.21.3 {
 /*import net.minecraft.client.player.Input;
@@ -9,6 +9,9 @@ import net.minecraft.world.entity.player.Input;
 //? if >=1.21.5 {
 import net.minecraft.world.phys.Vec2;
 //? }
+import com.voltaccept.AnalogAPI.api.AnalogAPI;
+import com.voltaccept.AnalogAPI.api.MovementState;
+import com.voltaccept.AnalogAPI.api.VirtualInput;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -50,7 +53,9 @@ public abstract class KeyboardInputMixin extends /*? if >=1.21.3 {*/ ClientInput
 
   /**
    * @author lvoegl
-   * @reason Computes player movement based on analog inputs.
+   * @reason Computes player movement based on analog inputs and exposes the AnalogAPI hook so that
+   *         external applications can read the current movement state or override it with virtual
+   *         input over the AnalogAPI HTTP server.
    */
   @Overwrite
   public void tick(/*? if <1.21.4 {*/ /*boolean slowDown, float slowDownFactor *//*?}*/) {
@@ -76,28 +81,61 @@ public abstract class KeyboardInputMixin extends /*? if >=1.21.3 {*/ ClientInput
       /*forwardImpulse = 0.0f;
       leftImpulse = 0.0f;
       *///?}
+      AnalogAPI.getInstance().publishMovementState(MovementState.idle());
       return;
     }
 
-    float forwardMovement = computeForwardMovement(options.keyUp, options.keyDown);
-    float sidewaysMovement = computeSidewaysMovement(options.keyLeft, options.keyRight);
+    AnalogAPI api = AnalogAPI.getInstance();
+    VirtualInput virtual = api.getVirtualInput();
+
+    float forwardMovement;
+    float sidewaysMovement;
+    boolean upPressed;
+    boolean downPressed;
+    boolean leftPressed;
+    boolean rightPressed;
+    boolean jumpPressed;
+    boolean sneakPressed;
+    boolean sprintPressed;
+
+    if (virtual != null) {
+      forwardMovement = virtual.forward;
+      sidewaysMovement = virtual.sideways;
+      upPressed = virtual.forward > 0f;
+      downPressed = virtual.forward < 0f;
+      rightPressed = virtual.sideways > 0f;
+      leftPressed = virtual.sideways < 0f;
+      jumpPressed = virtual.jump;
+      sneakPressed = virtual.sneak;
+      sprintPressed = virtual.sprint;
+    } else {
+      forwardMovement = computeForwardMovement(options.keyUp, options.keyDown);
+      sidewaysMovement = computeSidewaysMovement(options.keyLeft, options.keyRight);
+      upPressed = options.keyUp.isDown();
+      downPressed = options.keyDown.isDown();
+      leftPressed = options.keyLeft.isDown();
+      rightPressed = options.keyRight.isDown();
+      jumpPressed = options.keyJump.isDown();
+      sneakPressed = options.keyShift.isDown();
+      sprintPressed = options.keySprint.isDown();
+    }
 
     //? if >=1.21.3 {
     keyPresses = new Input(
-        options.keyUp.isDown(),
-        options.keyDown.isDown(),
-        options.keyLeft.isDown(),
-        options.keyRight.isDown(),
-        options.keyJump.isDown(),
-        options.keyShift.isDown(),
-        options.keySprint.isDown());
+        upPressed,
+        downPressed,
+        leftPressed,
+        rightPressed,
+        jumpPressed,
+        sneakPressed,
+        sprintPressed);
     //?} else {
-    /*up = options.keyUp.isDown();
-    down = options.keyDown.isDown();
-    left = options.keyLeft.isDown();
-    right = options.keyRight.isDown();
-    jumping = options.keyJump.isDown();
-    shiftKeyDown = options.keyShift.isDown();
+    /*up = upPressed;
+    down = downPressed;
+    left = leftPressed;
+    right = rightPressed;
+    jumping = jumpPressed;
+    shiftKeyDown = sneakPressed;
     *///?}
 
     //? if <1.21.4 {
@@ -113,5 +151,8 @@ public abstract class KeyboardInputMixin extends /*? if >=1.21.3 {*/ ClientInput
     /*forwardImpulse = forwardMovement;
     leftImpulse = sidewaysMovement;
     *///?}
+
+    api.publishMovementState(new MovementState(
+        forwardMovement, sidewaysMovement, jumpPressed, sneakPressed, sprintPressed));
   }
 }

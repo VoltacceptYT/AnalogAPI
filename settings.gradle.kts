@@ -32,4 +32,4 @@ stonecutter {
     create(rootProject)
 }
 
-rootProject.name = "AnalogMovement"
+rootProject.name = "AnalogAPI"
