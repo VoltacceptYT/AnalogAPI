@@ -13,7 +13,7 @@
     "sources": "https://github.com/lvoegl/analogmovement-mc"
   },
   "license": "GPL-2.0-or-later",
-  "icon": "analog_api-128x.png",
+  "icon": "analog_api-128x.svg",
   "environment": "client",
   "entrypoints": {
     "client": [
