@@ -1,0 +1,324 @@
+<!--
+ API Documentation HTML Template  - 1.0.1
+ Copyright © 2016 Florian Nicolas
+ Licensed under the MIT license.
+ https://github.com/ticlekiwi/API-Documentation-HTML-Template
+ !-->
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AnalogAPI - Documentation</title>
+    <meta name="description" content="AnalogAPI HTTP control surface for Minecraft">
+    <meta name="author" content="voltaccept">
+
+    <meta http-equiv="cleartype" content="on">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/hightlightjs-dark.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;1,300&family=Source+Code+Pro:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css" media="all">
+    <script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+<body>
+<div class="left-menu">
+    <div class="content-logo">
+        <div class="logo">
+            <img alt="AnalogAPI" title="AnalogAPI" src="images/logo.png" height="32" />
+            <span>AnalogAPI</span>
+        </div>
+        <button class="burger-menu-icon" id="button-menu-mobile">
+            <svg width="34" height="34" viewBox="0 0 100 100"><path class="line line1" d="M 20,29.000046 H 80.000231 C 80.000231,29.000046 94.498839,28.817352 94.532987,66.711331 94.543142,77.980673 90.966081,81.670246 85.259173,81.668997 79.552261,81.667751 75.000211,74.999942 75.000211,74.999942 L 25.000021,25.000058"></path><path class="line line2" d="M 20,50 H 80"></path><path class="line line3" d="M 20,70.999954 H 80.000231 C 80.000231,70.999954 94.498839,71.182648 94.532987,33.288669 94.543142,22.019327 90.966081,18.329754 85.259173,18.331003 79.552261,18.332249 75.000211,25.000058 75.000211,25.000058 L 25.000021,74.999942"></path></svg>
+        </button>
+    </div>
+    <div class="mobile-menu-closer"></div>
+    <div class="content-menu">
+        <div class="content-infos">
+            <div class="info"><b>Version:</b> 0.1.2</div>
+            <div class="info"><b>Mod ID:</b> analog_api</div>
+        </div>
+        <ul>
+            <li class="scroll-to-link active" data-target="content-get-started">
+                <a>GET STARTED</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-health">
+                <a>Health</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-state">
+                <a>Get Movement State</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-virtual-get">
+                <a>Get Virtual Input</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-virtual-post">
+                <a>Set Virtual Input</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-virtual-delete">
+                <a>Clear Virtual Input</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-errors">
+                <a>Errors</a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="overflow-hidden content-section" id="content-get-started">
+            <h1>Get started</h1>
+            <pre>
+    API Endpoint
+
+        http://127.0.0.1:27800/
+            </pre>
+            <p>
+                <strong>AnalogAPI</strong> is a Fabric mod for Minecraft that exposes the
+                player's movement state &mdash; and lets external programs <em>drive</em>
+                the player &mdash; through a small HTTP API running on
+                <code class="higlighted">localhost</code>.
+            </p>
+            <p>
+                The server binds to <code class="higlighted">127.0.0.1:27800</code> by
+                default. You can override the host and port with the system properties
+                <code class="higlighted">analogapi.host</code> /
+                <code class="higlighted">analogapi.port</code> or with the environment
+                variables <code class="higlighted">ANALOGAPI_HOST</code> /
+                <code class="higlighted">ANALOGAPI_PORT</code>.
+            </p>
+            <p>
+                All endpoints accept and return <code class="higlighted">application/json</code>.
+                CORS is fully open (<code class="higlighted">Access-Control-Allow-Origin: *</code>)
+                so browser-based dashboards can call the API directly.
+            </p>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-health">
+            <h2>Health check</h2>
+            <pre><code class="bash">
+# Liveness probe
+curl http://127.0.0.1:27800/api/health
+            </code></pre>
+            <p>
+                A simple liveness probe that always returns <code class="higlighted">200 OK</code>
+                while the mod is loaded.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/health</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{
+  "ok": true,
+  "name": "AnalogAPI"
+}
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-state">
+            <h2>Get movement state</h2>
+            <pre><code class="bash">
+# Read the latest computed movement
+curl http://127.0.0.1:27800/api/state
+            </code></pre>
+            <p>
+                Returns the latest movement state computed by the mod for the current
+                client tick.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/state</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{
+  "forward":  0.85,
+  "sideways": -0.32,
+  "jump":     false,
+  "sneak":    false,
+  "sprint":   true
+}
+            </code></pre>
+            <h4>RESPONSE FIELDS</h4>
+            <table class="central-overflow-x">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>forward</td>
+                    <td>Float</td>
+                    <td>Forward (+) / backward (&minus;) impulse, in <code class="higlighted">[-1.0, 1.0]</code>.</td>
+                </tr>
+                <tr>
+                    <td>sideways</td>
+                    <td>Float</td>
+                    <td>Right (+) / left (&minus;) impulse, in <code class="higlighted">[-1.0, 1.0]</code>.</td>
+                </tr>
+                <tr>
+                    <td>jump</td>
+                    <td>Boolean</td>
+                    <td>Whether the jump key is pressed this tick.</td>
+                </tr>
+                <tr>
+                    <td>sneak</td>
+                    <td>Boolean</td>
+                    <td>Whether the sneak / shift key is pressed this tick.</td>
+                </tr>
+                <tr>
+                    <td>sprint</td>
+                    <td>Boolean</td>
+                    <td>Whether the sprint key is pressed this tick.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-virtual-get">
+            <h2>Get virtual input</h2>
+            <pre><code class="bash">
+# Check whether a virtual input is currently driving the player
+curl http://127.0.0.1:27800/api/virtual-input
+            </code></pre>
+            <p>
+                Reports whether a virtual input is currently overriding the keyboard,
+                and if so what its values are.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/virtual-input</code>
+            </p>
+            <pre><code class="json">
+Inactive :
+
+{ "active": false }
+
+Active :
+
+{
+  "active":   true,
+  "forward":  1.0,
+  "sideways": 0.0,
+  "jump":     false,
+  "sneak":    false,
+  "sprint":   true
+}
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-virtual-post">
+            <h2>Set virtual input</h2>
+            <pre><code class="bash">
+# Walk forward at full speed while sprinting
+curl -X POST http://127.0.0.1:27800/api/virtual-input \
+     -H "Content-Type: application/json" \
+     -d '{"forward":1.0,"sprint":true}'
+            </code></pre>
+            <p>
+                Set or replace the virtual input. While set, the mixin uses these
+                values instead of the real keyboard / analog input.<br>
+                <code class="higlighted break-word">POST http://127.0.0.1:27800/api/virtual-input</code>
+                (<code class="higlighted">PUT</code> is also accepted)
+            </p>
+            <h4>BODY PARAMETERS</h4>
+            <table class="central-overflow-x">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>forward</td>
+                    <td>Float</td>
+                    <td>(optional &mdash; default <code class="higlighted">0</code>) Forward / backward impulse, clamped to <code class="higlighted">[-1.0, 1.0]</code>.</td>
+                </tr>
+                <tr>
+                    <td>sideways</td>
+                    <td>Float</td>
+                    <td>(optional &mdash; default <code class="higlighted">0</code>) Right / left impulse, clamped to <code class="higlighted">[-1.0, 1.0]</code>.</td>
+                </tr>
+                <tr>
+                    <td>jump</td>
+                    <td>Boolean</td>
+                    <td>(optional &mdash; default <code class="higlighted">false</code>) Whether to hold the jump key.</td>
+                </tr>
+                <tr>
+                    <td>sneak</td>
+                    <td>Boolean</td>
+                    <td>(optional &mdash; default <code class="higlighted">false</code>) Whether to hold sneak.</td>
+                </tr>
+                <tr>
+                    <td>sprint</td>
+                    <td>Boolean</td>
+                    <td>(optional &mdash; default <code class="higlighted">false</code>) Whether to hold sprint.</td>
+                </tr>
+                </tbody>
+            </table>
+            <pre><code class="json">
+Result example :
+
+{ "active": true }
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-virtual-delete">
+            <h2>Clear virtual input</h2>
+            <pre><code class="bash">
+# Hand control back to the keyboard
+curl -X DELETE http://127.0.0.1:27800/api/virtual-input
+            </code></pre>
+            <p>
+                Removes any active virtual input and restores normal keyboard /
+                <code class="higlighted">libanalog</code> behavior.<br>
+                <code class="higlighted break-word">DELETE http://127.0.0.1:27800/api/virtual-input</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{ "active": false }
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-errors">
+            <h2>Errors</h2>
+            <p>
+                AnalogAPI returns standard HTTP status codes. The body is always JSON.
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Meaning</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>200</td>
+                    <td>Request handled successfully.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Invalid JSON body on <code class="higlighted">POST /api/virtual-input</code>. The response includes <code class="higlighted">{"error":"invalid_json","message":"&hellip;"}</code>.</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Unknown path. The response is <code class="higlighted">{"error":"not_found"}</code>.</td>
+                </tr>
+                <tr>
+                    <td>405</td>
+                    <td>HTTP method not supported on this endpoint. The response is <code class="higlighted">{"error":"method_not_allowed"}</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="content-code"></div>
+</div>
+<script src="js/script.js"></script>
+</body>
+</html>

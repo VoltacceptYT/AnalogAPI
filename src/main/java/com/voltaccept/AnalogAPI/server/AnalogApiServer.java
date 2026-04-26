@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -33,6 +34,7 @@ public final class AnalogApiServer {
     server.createContext("/api/health", new HealthHandler());
     server.createContext("/api/state", new StateHandler());
     server.createContext("/api/virtual-input", new VirtualInputHandler());
+    server.createContext("/", new StaticFileHandler("/web", "index.html"));
 
     server.start();
   }
@@ -137,6 +139,82 @@ public final class AnalogApiServer {
 
     private static boolean parseBool(String v) {
       return v != null && (v.equalsIgnoreCase("true") || v.equals("1"));
+    }
+  }
+
+  private static final class StaticFileHandler implements HttpHandler {
+    private final String resourceRoot;
+    private final String indexFile;
+
+    StaticFileHandler(String resourceRoot, String indexFile) {
+      String r = resourceRoot;
+      while (r.endsWith("/")) r = r.substring(0, r.length() - 1);
+      this.resourceRoot = r;
+      this.indexFile = indexFile;
+    }
+
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      String method = ex.getRequestMethod().toUpperCase(Locale.ROOT);
+      if (!method.equals("GET") && !method.equals("HEAD")) {
+        writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+        return;
+      }
+
+      String path = ex.getRequestURI().getPath();
+      if (path == null || path.isEmpty()) path = "/";
+      int q = path.indexOf('?');
+      if (q >= 0) path = path.substring(0, q);
+
+      String relative = path.startsWith("/") ? path.substring(1) : path;
+      if (relative.isEmpty() || relative.endsWith("/")) {
+        relative = relative + indexFile;
+      }
+
+      if (relative.contains("..") || relative.contains("//") || relative.startsWith("/")) {
+        writeJson(ex, 404, "{\"error\":\"not_found\"}");
+        return;
+      }
+
+      String resourcePath = resourceRoot + "/" + relative;
+      try (InputStream is = StaticFileHandler.class.getResourceAsStream(resourcePath)) {
+        if (is == null) {
+          writeJson(ex, 404, "{\"error\":\"not_found\"}");
+          return;
+        }
+        byte[] bytes = is.readAllBytes();
+        ex.getResponseHeaders().add("Content-Type", contentTypeFor(relative));
+        ex.getResponseHeaders().add("Cache-Control", "no-cache");
+        ex.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        if (method.equals("HEAD")) {
+          ex.sendResponseHeaders(200, -1);
+          ex.getResponseBody().close();
+        } else {
+          ex.sendResponseHeaders(200, bytes.length);
+          try (OutputStream os = ex.getResponseBody()) {
+            os.write(bytes);
+          }
+        }
+      }
+    }
+
+    private static String contentTypeFor(String name) {
+      String lower = name.toLowerCase(Locale.ROOT);
+      if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html; charset=utf-8";
+      if (lower.endsWith(".css")) return "text/css; charset=utf-8";
+      if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "application/javascript; charset=utf-8";
+      if (lower.endsWith(".json")) return "application/json; charset=utf-8";
+      if (lower.endsWith(".png")) return "image/png";
+      if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+      if (lower.endsWith(".gif")) return "image/gif";
+      if (lower.endsWith(".svg")) return "image/svg+xml";
+      if (lower.endsWith(".ico")) return "image/x-icon";
+      if (lower.endsWith(".webp")) return "image/webp";
+      if (lower.endsWith(".woff")) return "font/woff";
+      if (lower.endsWith(".woff2")) return "font/woff2";
+      if (lower.endsWith(".ttf")) return "font/ttf";
+      if (lower.endsWith(".txt") || lower.endsWith(".md")) return "text/plain; charset=utf-8";
+      return "application/octet-stream";
     }
   }
 
