@@ -29,7 +29,7 @@
 <div class="left-menu">
     <div class="content-logo">
         <div class="logo">
-            <img alt="AnalogAPI" title="AnalogAPI" src="images/logo.svg" height="32" />
+            <img alt="AnalogAPI" title="AnalogAPI" src="images/logo.png" height="32" />
             <span>AnalogAPI</span>
         </div>
         <button class="burger-menu-icon" id="button-menu-mobile">
@@ -61,6 +61,18 @@
             <li class="scroll-to-link" data-target="content-virtual-delete">
                 <a>Clear Virtual Input</a>
             </li>
+            <li class="scroll-to-link" data-target="content-controller">
+                <a>Controller API</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-controller-status">
+                <a>Controller Status</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-controller-bindings">
+                <a>Button Bindings</a>
+            </li>
+            <li class="scroll-to-link" data-target="content-controller-config">
+                <a>Controller Config</a>
+            </li>
             <li class="scroll-to-link" data-target="content-errors">
                 <a>Errors</a>
             </li>
@@ -77,9 +89,7 @@
         http://127.0.0.1:27800/
             </pre>
             <p>
-                <strong>AnalogAPI</strong> is a Fabric mod for Minecraft that exposes the
-                player's movement state &mdash; and lets external programs <em>drive</em>
-                the player &mdash; through a small HTTP API running on
+                <strong>AnalogAPI - Controller Support</strong> is a Fabric mod for Minecraft that provides comprehensive gamepad functionality with configurable button mappings. It exposes controller state and allows real-time button remapping through a small HTTP API running on
                 <code class="higlighted">localhost</code>.
             </p>
             <p>
@@ -281,6 +291,244 @@ curl -X DELETE http://127.0.0.1:27800/api/virtual-input
 Result example :
 
 { "active": false }
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-controller">
+            <h2>Controller API</h2>
+            <p>
+                <strong>AnalogAPI - Controller Support</strong> provides comprehensive gamepad functionality with configurable button mappings. The controller API allows you to check controller status, manage button bindings, and configure controller settings.
+            </p>
+            <p>
+                Supported controllers include Xbox, PlayStation, and generic USB gamepads. All buttons can be remapped to any Minecraft action with support for both digital and analog inputs.
+            </p>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-controller-status">
+            <h2>Controller Status</h2>
+            <pre><code class="bash">
+# Check controller connection and status
+curl http://127.0.0.1:27800/api/controller
+            </code></pre>
+            <p>
+                Get the current controller connection status and input processing state.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/controller</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{
+  "connected": true,
+  "enabled": true,
+  "driving": false
+}
+            </code></pre>
+            
+            <h3>Enable/Disable Controller</h3>
+            <pre><code class="bash">
+# Enable controller input
+curl -X POST http://127.0.0.1:27800/api/controller \
+     -H "Content-Type: application/json" \
+     -d '{"enabled":true}'
+            </code></pre>
+            <p>
+                Enable or disable controller input processing.<br>
+                <code class="higlighted break-word">POST http://127.0.0.1:27800/api/controller</code>
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>enabled</td>
+                    <td>Boolean</td>
+                    <td>Whether to enable controller input processing.</td>
+                </tr>
+                </tbody>
+            </table>
+            <pre><code class="json">
+Result example :
+
+{ "enabled": true }
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-controller-bindings">
+            <h2>Button Bindings</h2>
+            <pre><code class="bash">
+# Get all button bindings
+curl http://127.0.0.1:27800/api/controller/bindings
+            </code></pre>
+            <p>
+                Retrieve all current button mappings.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/controller/bindings</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{
+  "bindings": [
+    {
+      "button": "a_button",
+      "action": "jump",
+      "threshold": 0.5,
+      "analog": false
+    },
+    {
+      "button": "left_trigger",
+      "action": "use",
+      "threshold": 0.1,
+      "analog": true
+    }
+  ]
+}
+            </code></pre>
+
+            <h3>Set Button Binding</h3>
+            <pre><code class="bash">
+# Bind A button to jump
+curl -X POST http://127.0.0.1:27800/api/controller/bindings \
+     -H "Content-Type: application/json" \
+     -d '{"button":"a_button","action":"jump"}'
+            </code></pre>
+            <p>
+                Create or update a button binding.<br>
+                <code class="higlighted break-word">POST http://127.0.0.1:27800/api/controller/bindings</code>
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>button</td>
+                    <td>String</td>
+                    <td>Controller button (a_button, b_button, x_button, y_button, left_bumper, right_bumper, left_trigger, right_trigger, etc.)</td>
+                </tr>
+                <tr>
+                    <td>action</td>
+                    <td>String</td>
+                    <td>Minecraft action (forward, backward, left, right, jump, sneak, sprint, attack, use, inventory, chat, drop_item, pause)</td>
+                </tr>
+                <tr>
+                    <td>threshold</td>
+                    <td>Float</td>
+                    <td>(optional) Analog threshold value 0.0-1.0, default 0.5</td>
+                </tr>
+                <tr>
+                    <td>analog</td>
+                    <td>Boolean</td>
+                    <td>(optional) Whether this is an analog binding, default false</td>
+                </tr>
+                </tbody>
+            </table>
+            <pre><code class="json">
+Result example :
+
+{ "success": true }
+            </code></pre>
+
+            <h3>Remove Button Binding</h3>
+            <pre><code class="bash">
+# Remove A button binding
+curl -X DELETE http://127.0.0.1:27800/api/controller/bindings \
+     -H "Content-Type: application/json" \
+     -d '{"button":"a_button"}'
+            </code></pre>
+            <p>
+                Remove a button binding.<br>
+                <code class="higlighted break-word">DELETE http://127.0.0.1:27800/api/controller/bindings</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{ "success": true }
+            </code></pre>
+        </div>
+
+        <div class="overflow-hidden content-section" id="content-controller-config">
+            <h2>Controller Configuration</h2>
+            <pre><code class="bash">
+# Get controller configuration
+curl http://127.0.0.1:27800/api/controller/config
+            </code></pre>
+            <p>
+                Get current controller settings including deadzones, sensitivity, and all bindings.<br>
+                <code class="higlighted break-word">GET http://127.0.0.1:27800/api/controller/config</code>
+            </p>
+            <pre><code class="json">
+Result example :
+
+{
+  "leftStickDeadzone": 0.15,
+  "rightStickDeadzone": 0.15,
+  "triggerThreshold": 0.1,
+  "invertYAxis": false,
+  "stickSensitivity": 1.0,
+  "bindings": [...]
+}
+            </code></pre>
+
+            <h3>Update Controller Configuration</h3>
+            <pre><code class="bash">
+# Configure deadzones and sensitivity
+curl -X POST http://127.0.0.1:27800/api/controller/config \
+     -H "Content-Type: application/json" \
+     -d '{"leftStickDeadzone":0.2,"rightStickDeadzone":0.2,"stickSensitivity":1.2}'
+            </code></pre>
+            <p>
+                Update controller configuration settings. All fields are optional.<br>
+                <code class="higlighted break-word">POST http://127.0.0.1:27800/api/controller/config</code>
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>leftStickDeadzone</td>
+                    <td>Float</td>
+                    <td>Left analog stick deadzone 0.0-1.0, default 0.15</td>
+                </tr>
+                <tr>
+                    <td>rightStickDeadzone</td>
+                    <td>Float</td>
+                    <td>Right analog stick deadzone 0.0-1.0, default 0.15</td>
+                </tr>
+                <tr>
+                    <td>triggerThreshold</td>
+                    <td>Float</td>
+                    <td>Trigger activation threshold 0.0-1.0, default 0.1</td>
+                </tr>
+                <tr>
+                    <td>invertYAxis</td>
+                    <td>Boolean</td>
+                    <td>Whether to invert the Y-axis, default false</td>
+                </tr>
+                <tr>
+                    <td>stickSensitivity</td>
+                    <td>Float</td>
+                    <td>Stick sensitivity multiplier 0.1-3.0, default 1.0</td>
+                </tr>
+                </tbody>
+            </table>
+            <pre><code class="json">
+Result example :
+
+{ "success": true }
             </code></pre>
         </div>
 

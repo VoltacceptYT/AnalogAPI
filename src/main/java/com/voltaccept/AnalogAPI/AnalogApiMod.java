@@ -2,6 +2,8 @@ package com.voltaccept.AnalogAPI;
 
 import com.voltaccept.AnalogAPI.api.AnalogAPI;
 import com.voltaccept.AnalogAPI.server.AnalogApiServer;
+import com.voltaccept.AnalogAPI.controller.ControllerManager;
+import com.voltaccept.AnalogAPI.controller.ControllerPoller;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ public final class AnalogApiMod implements ClientModInitializer {
   @Override
   public void onInitializeClient() {
     AnalogAPI.getInstance();
+    ControllerManager.getInstance();
+    ControllerPoller.getInstance().start();
 
     int port = parsePort(System.getProperty("analogapi.port", System.getenv("ANALOGAPI_PORT")), 27800);
     String host = firstNonNull(System.getProperty("analogapi.host"), System.getenv("ANALOGAPI_HOST"), "127.0.0.1");
@@ -22,13 +26,14 @@ public final class AnalogApiMod implements ClientModInitializer {
     try {
       server = new AnalogApiServer(host, port);
       server.start();
-      LOGGER.info("AnalogAPI HTTP server started on http://{}:{}", host, port);
+      LOGGER.info("AnalogAPI Controller Support HTTP server started on http://{}:{}", host, port);
     } catch (Exception e) {
       LOGGER.error("Failed to start AnalogAPI HTTP server", e);
     }
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       if (server != null) server.stop();
+      ControllerPoller.getInstance().stop();
     }, "AnalogAPI-Shutdown"));
   }
 

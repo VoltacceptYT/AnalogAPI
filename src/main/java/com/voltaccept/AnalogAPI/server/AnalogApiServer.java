@@ -6,6 +6,11 @@ import com.sun.net.httpserver.HttpServer;
 import com.voltaccept.AnalogAPI.api.AnalogAPI;
 import com.voltaccept.AnalogAPI.api.MovementState;
 import com.voltaccept.AnalogAPI.api.VirtualInput;
+import com.voltaccept.AnalogAPI.controller.ControllerManager;
+import com.voltaccept.AnalogAPI.controller.ControllerButton;
+import com.voltaccept.AnalogAPI.controller.ControllerAction;
+import com.voltaccept.AnalogAPI.controller.ButtonBinding;
+import com.voltaccept.AnalogAPI.controller.ControllerConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +39,9 @@ public final class AnalogApiServer {
     server.createContext("/api/health", new HealthHandler());
     server.createContext("/api/state", new StateHandler());
     server.createContext("/api/virtual-input", new VirtualInputHandler());
+    server.createContext("/api/controller", new ControllerHandler());
+    server.createContext("/api/controller/bindings", new ControllerBindingsHandler());
+    server.createContext("/api/controller/config", new ControllerConfigHandler());
     server.createContext("/", new StaticFileHandler("/web", "index.html"));
 
     server.start();
@@ -73,7 +81,7 @@ public final class AnalogApiServer {
   private static final class HealthHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {
-      writeJson(ex, 200, "{\"ok\":true,\"name\":\"AnalogAPI\"}");
+      writeJson(ex, 200, "{\"ok\":true,\"name\":\"AnalogAPI Controller Support\"}");
     }
   }
 
@@ -215,6 +223,181 @@ public final class AnalogApiServer {
       if (lower.endsWith(".ttf")) return "font/ttf";
       if (lower.endsWith(".txt") || lower.endsWith(".md")) return "text/plain; charset=utf-8";
       return "application/octet-stream";
+    }
+  }
+
+  private static final class ControllerHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      String method = ex.getRequestMethod().toUpperCase();
+      ControllerManager manager = ControllerManager.getInstance();
+
+      switch (method) {
+        case "GET" -> {
+          String response = "{"
+              + "\"connected\":" + manager.isControllerConnected()
+              + ",\"enabled\":" + manager.isControllerInputEnabled()
+              + ",\"driving\":" + manager.isControllerDriving()
+              + "}";
+          writeJson(ex, 200, response);
+        }
+        case "POST" -> {
+          try {
+            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
+            boolean enabled = parseBool(fields.get("enabled"), manager.isControllerInputEnabled());
+            manager.setControllerInputEnabled(enabled);
+            writeJson(ex, 200, "{\"enabled\":" + enabled + "}");
+          } catch (Exception e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\""
+                + e.getMessage().replace("\"", "'") + "\"}");
+          }
+        }
+        default -> writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+      }
+    }
+
+    private static boolean parseBool(String v, boolean fallback) {
+      if (v == null) return fallback;
+      return v.equalsIgnoreCase("true") || v.equals("1");
+    }
+  }
+
+  private static final class ControllerBindingsHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      String method = ex.getRequestMethod().toUpperCase();
+      ControllerManager manager = ControllerManager.getInstance();
+
+      switch (method) {
+        case "GET" -> {
+          String response = "{\"bindings\":[";
+          boolean first = true;
+          for (ButtonBinding binding : manager.getConfig().getAllBindings().values()) {
+            if (!first) response += ",";
+            response += binding.toJson();
+            first = false;
+          }
+          response += "]}";
+          writeJson(ex, 200, response);
+        }
+        case "POST", "PUT" -> {
+          try {
+            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
+            String buttonId = fields.get("button");
+            String actionId = fields.get("action");
+            float threshold = parseFloat(fields.get("threshold"), 0.5f);
+            boolean analog = parseBool(fields.get("analog"));
+
+            if (buttonId == null || actionId == null) {
+              writeJson(ex, 400, "{\"error\":\"missing_fields\",\"message\":\"button and action required\"}");
+              return;
+            }
+
+            try {
+              ControllerButton button = ControllerButton.valueOf(buttonId.toUpperCase());
+              ControllerAction action = ControllerAction.valueOf(actionId.toUpperCase());
+              
+              if (analog) {
+                manager.getConfig().bind(button, action, threshold);
+              } else {
+                manager.getConfig().bind(button, action);
+              }
+              
+              writeJson(ex, 200, "{\"success\":true}");
+            } catch (IllegalArgumentException e) {
+              writeJson(ex, 400, "{\"error\":\"invalid_button_or_action\",\"message\":\""
+                  + e.getMessage().replace("\"", "'") + "\"}");
+            }
+          } catch (Exception e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\""
+                + e.getMessage().replace("\"", "'") + "\"}");
+          }
+        }
+        case "DELETE" -> {
+          try {
+            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
+            String buttonId = fields.get("button");
+            
+            if (buttonId == null) {
+              writeJson(ex, 400, "{\"error\":\"missing_field\",\"message\":\"button required\"}");
+              return;
+            }
+
+            try {
+              ControllerButton button = ControllerButton.valueOf(buttonId.toUpperCase());
+              manager.getConfig().unbind(button);
+              writeJson(ex, 200, "{\"success\":true}");
+            } catch (IllegalArgumentException e) {
+              writeJson(ex, 400, "{\"error\":\"invalid_button\",\"message\":\""
+                  + e.getMessage().replace("\"", "'") + "\"}");
+            }
+          } catch (Exception e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\""
+                + e.getMessage().replace("\"", "'") + "\"}");
+          }
+        }
+        default -> writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+      }
+    }
+
+    private static float parseFloat(String v, float fallback) {
+      if (v == null) return fallback;
+      try { return Float.parseFloat(v); } catch (NumberFormatException e) { return fallback; }
+    }
+
+    private static boolean parseBool(String v) {
+      return v != null && (v.equalsIgnoreCase("true") || v.equals("1"));
+    }
+  }
+
+  private static final class ControllerConfigHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      String method = ex.getRequestMethod().toUpperCase();
+      ControllerManager manager = ControllerManager.getInstance();
+
+      switch (method) {
+        case "GET" -> {
+          writeJson(ex, 200, manager.getConfig().toJson());
+        }
+        case "POST", "PUT" -> {
+          try {
+            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
+            ControllerConfig config = manager.getConfig();
+
+            if (fields.containsKey("leftStickDeadzone")) {
+              config.setLeftStickDeadzone(parseFloat(fields.get("leftStickDeadzone"), config.getLeftStickDeadzone()));
+            }
+            if (fields.containsKey("rightStickDeadzone")) {
+              config.setRightStickDeadzone(parseFloat(fields.get("rightStickDeadzone"), config.getRightStickDeadzone()));
+            }
+            if (fields.containsKey("triggerThreshold")) {
+              config.setTriggerThreshold(parseFloat(fields.get("triggerThreshold"), config.getTriggerThreshold()));
+            }
+            if (fields.containsKey("invertYAxis")) {
+              config.setInvertYAxis(parseBool(fields.get("invertYAxis")));
+            }
+            if (fields.containsKey("stickSensitivity")) {
+              config.setStickSensitivity(parseFloat(fields.get("stickSensitivity"), config.getStickSensitivity()));
+            }
+
+            writeJson(ex, 200, "{\"success\":true}");
+          } catch (Exception e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\""
+                + e.getMessage().replace("\"", "'") + "\"}");
+          }
+        }
+        default -> writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+      }
+    }
+
+    private static float parseFloat(String v, float fallback) {
+      if (v == null) return fallback;
+      try { return Float.parseFloat(v); } catch (NumberFormatException e) { return fallback; }
+    }
+
+    private static boolean parseBool(String v) {
+      return v != null && (v.equalsIgnoreCase("true") || v.equals("1"));
     }
   }
 

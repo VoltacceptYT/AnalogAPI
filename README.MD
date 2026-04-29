@@ -1,14 +1,14 @@
-# AnalogAPI
+# AnalogAPI Controller Support
 
-An API mod for Minecraft (Fabric) that exposes player movement state and lets
-**any external application** drive the player through a small HTTP API running
-on `localhost`.
+A controller support mod for Minecraft (Fabric) that provides comprehensive gamepad
+functionality with configurable button bindings. The mod exposes controller state
+and allows **real-time button remapping** through a small HTTP API running on
+`localhost`.
 
-It is built on top of the original AnalogMovement work and the `libanalog`
-library: keyboard analog values are still computed from `libanalog`, but they
-are now also published to a public Java API and a JSON HTTP server so other
-programs (overlays, AI agents, controller bridges, accessibility tools, custom
-launchers, etc.) can both **observe** and **override** what the player is doing.
+Built on top of the original AnalogMovement work and the `libanalog` library,
+AnalogAPI Controller Support adds native gamepad integration with customizable
+mappings, deadzone settings, and full analog stick support for an enhanced
+gaming experience.
 
 * Mod ID: `analog_api`
 * Java package: `com.voltaccept.AnalogAPI`
@@ -20,17 +20,26 @@ launchers, etc.) can both **observe** and **override** what the player is doing.
 ## Table of contents
 
 1. [Installation](#installation)
-2. [Configuration](#configuration)
-3. [Java API](#java-api)
-4. [HTTP API](#http-api)
+2. [Controller Setup](#controller-setup)
+3. [Button Bindings](#button-bindings)
+4. [Configuration](#configuration)
+5. [Java API](#java-api)
+6. [HTTP API](#http-api)
    * [`GET /api/health`](#get-apihealth)
    * [`GET /api/state`](#get-apistate)
    * [`GET /api/virtual-input`](#get-apivirtual-input)
    * [`POST /api/virtual-input`](#post-apivirtual-input)
    * [`DELETE /api/virtual-input`](#delete-apivirtual-input)
-5. [Examples](#examples)
-6. [Building from source](#building-from-source)
-7. [License](#license)
+   * [`GET /api/controller`](#get-apicontroller)
+   * [`POST /api/controller`](#post-apicontroller)
+   * [`GET /api/controller/bindings`](#get-apicontrollerbindings)
+   * [`POST /api/controller/bindings`](#post-apicontrollerbindings)
+   * [`DELETE /api/controller/bindings`](#delete-apicontrollerbindings)
+   * [`GET /api/controller/config`](#get-apicontrollerconfig)
+   * [`POST /api/controller/config`](#post-apicontrollerconfig)
+7. [Examples](#examples)
+8. [Building from source](#building-from-source)
+9. [License](#license)
 
 ---
 
@@ -44,11 +53,53 @@ launchers, etc.) can both **observe** and **override** what the player is doing.
 3. Launch the game. On startup the log will contain a line similar to:
 
    ```
-   [analog_api] AnalogAPI HTTP server started on http://127.0.0.1:27800
+   [analog_api] AnalogAPI Controller Support HTTP server started on http://127.0.0.1:27800
    ```
 
 The HTTP server listens on `127.0.0.1` (loopback) by default, so it is **not**
 reachable from the network unless you change the host explicitly.
+
+---
+
+## Controller Setup
+
+AnalogAPI Controller Support automatically detects compatible gamepads (Xbox, PlayStation, and generic USB controllers). 
+
+**Supported Controllers:**
+- Xbox One/Series X|S controllers
+- PlayStation DualShock 4/DualSense controllers  
+- Generic USB gamepads following standard layouts
+- Most Bluetooth controllers
+
+**Default Button Layout:**
+- **A Button** - Jump
+- **B Button** - Sneak  
+- **X Button** - Attack/Use item
+- **Y Button** - Inventory
+- **Left Bumper** - Drop item
+- **Right Bumper** - Sprint
+- **Left Trigger** - Use item (analog)
+- **Right Trigger** - Attack (analog)
+- **Left Stick** - Movement
+- **Start Button** - Pause menu
+- **Back/Select Button** - Inventory
+
+---
+
+## Button Bindings
+
+The mod allows complete customization of controller button mappings through the HTTP API. Each button can be bound to any Minecraft action, with support for both digital and analog inputs.
+
+**Available Actions:**
+- Movement: `forward`, `backward`, `left`, `right`
+- Actions: `jump`, `sneak`, `sprint`, `attack`, `use`
+- Interface: `inventory`, `chat`, `drop_item`, `pause`
+
+**Binding Types:**
+- **Digital**: Simple on/off button press
+- **Analog**: Variable input based on pressure (triggers, some buttons)
+
+See the [HTTP API](#http-api) section for detailed binding configuration.
 
 ## Configuration
 
@@ -231,6 +282,143 @@ Clear any active virtual input and return control to the keyboard.
 { "active": false }
 ```
 
+### `GET /api/controller`
+
+Get controller status and connection information.
+
+**Response `200`:**
+
+```json
+{
+  "connected": true,
+  "enabled": true,
+  "driving": false
+}
+```
+
+### `POST /api/controller`
+
+Enable or disable controller input processing.
+
+**Request body:**
+
+```json
+{
+  "enabled": true
+}
+```
+
+**Response `200`:**
+
+```json
+{ "enabled": true }
+```
+
+### `GET /api/controller/bindings`
+
+Get all current button bindings.
+
+**Response `200`:**
+
+```json
+{
+  "bindings": [
+    {
+      "button": "a_button",
+      "action": "jump",
+      "threshold": 0.5,
+      "analog": false
+    },
+    {
+      "button": "left_trigger",
+      "action": "use",
+      "threshold": 0.1,
+      "analog": true
+    }
+  ]
+}
+```
+
+### `POST /api/controller/bindings`
+
+Create or update a button binding.
+
+**Request body:**
+
+```json
+{
+  "button": "a_button",
+  "action": "jump",
+  "threshold": 0.5,
+  "analog": false
+}
+```
+
+**Response `200`:**
+
+```json
+{ "success": true }
+```
+
+**Response `400`:** Invalid button/action or missing fields.
+
+### `DELETE /api/controller/bindings`
+
+Remove a button binding.
+
+**Request body:**
+
+```json
+{
+  "button": "a_button"
+}
+```
+
+**Response `200`:**
+
+```json
+{ "success": true }
+```
+
+### `GET /api/controller/config`
+
+Get controller configuration settings.
+
+**Response `200`:**
+
+```json
+{
+  "leftStickDeadzone": 0.15,
+  "rightStickDeadzone": 0.15,
+  "triggerThreshold": 0.1,
+  "invertYAxis": false,
+  "stickSensitivity": 1.0,
+  "bindings": [...]
+}
+```
+
+### `POST /api/controller/config`
+
+Update controller configuration settings.
+
+**Request body:** All fields are optional.
+
+```json
+{
+  "leftStickDeadzone": 0.2,
+  "rightStickDeadzone": 0.2,
+  "triggerThreshold": 0.15,
+  "invertYAxis": true,
+  "stickSensitivity": 1.2
+}
+```
+
+**Response `200`:**
+
+```json
+{ "success": true }
+```
+
 ---
 
 ## Examples
@@ -253,7 +441,22 @@ curl -X POST http://127.0.0.1:27800/api/virtual-input \
 
 # Stop
 curl -X DELETE http://127.0.0.1:27800/api/virtual-input
-```
+
+# Check controller status
+curl http://127.0.0.1:27800/api/controller
+
+# Get current button bindings
+curl http://127.0.0.1:27800/api/controller/bindings
+
+# Bind Xbox A button to jump
+curl -X POST http://127.0.0.1:27800/api/controller/bindings \
+     -H "Content-Type: application/json" \
+     -d '{"button":"a_button","action":"jump"}'
+
+# Configure controller deadzones
+curl -X POST http://127.0.0.1:27800/api/controller/config \
+     -H "Content-Type: application/json" \
+     -d '{"leftStickDeadzone":0.2,"rightStickDeadzone":0.2}'
 
 ### Python
 
@@ -272,6 +475,47 @@ requests.post(f"{BASE}/api/virtual-input",
               json={"forward": 1.0, "sprint": True})
 time.sleep(2)
 requests.delete(f"{BASE}/api/virtual-input")
+
+# Controller management examples
+def setup_controller():
+    # Check if controller is connected
+    status = requests.get(f"{BASE}/api/controller").json()
+    print(f"Controller connected: {status['connected']}")
+    
+    if status['connected']:
+        # Enable controller input
+        requests.post(f"{BASE}/api/controller", json={"enabled": True})
+        
+        # Configure deadzones for precision
+        requests.post(f"{BASE}/api/controller/config", json={
+            "leftStickDeadzone": 0.15,
+            "rightStickDeadzone": 0.15,
+            "triggerThreshold": 0.1
+        })
+        
+        # Custom button binding - make RB the attack button
+        requests.post(f"{BASE}/api/controller/bindings", json={
+            "button": "right_bumper",
+            "action": "attack"
+        })
+
+def remap_buttons():
+    # Create a FPS-style layout
+    bindings = [
+        {"button": "right_trigger", "action": "attack", "analog": True},
+        {"button": "left_trigger", "action": "use", "analog": True},
+        {"button": "a_button", "action": "jump"},
+        {"button": "b_button", "action": "sneak"},
+        {"button": "y_button", "action": "inventory"},
+        {"button": "x_button", "action": "drop_item"}
+    ]
+    
+    for binding in bindings:
+        requests.post(f"{BASE}/api/controller/bindings", json=binding)
+
+# Usage
+setup_controller()
+remap_buttons()
 ```
 
 ### JavaScript / Node
@@ -287,6 +531,82 @@ await fetch(`${BASE}/api/virtual-input`, {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ forward: 1.0, sideways: 0.5, sprint: true })
 });
+
+// Controller management examples
+class ControllerManager {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+
+  async getStatus() {
+    const response = await fetch(`${this.baseUrl}/api/controller`);
+    return await response.json();
+  }
+
+  async enableController(enabled = true) {
+    await fetch(`${this.baseUrl}/api/controller`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled })
+    });
+  }
+
+  async getBindings() {
+    const response = await fetch(`${this.baseUrl}/api/controller/bindings`);
+    return await response.json();
+  }
+
+  async setBinding(button, action, options = {}) {
+    const payload = { button, action, ...options };
+    await fetch(`${this.baseUrl}/api/controller/bindings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async configureSettings(settings) {
+    await fetch(`${this.baseUrl}/api/controller/config`, {
+      method: "POST", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings)
+    });
+  }
+}
+
+// Usage example
+async function setupFPSLayout() {
+  const controller = new ControllerManager(BASE);
+  
+  // Check connection
+  const status = await controller.getStatus();
+  console.log(`Controller connected: ${status.connected}`);
+  
+  if (status.connected) {
+    await controller.enableController(true);
+    
+    // Configure for FPS gaming
+    await controller.configureSettings({
+      leftStickDeadzone: 0.1,
+      rightStickDeadzone: 0.1,
+      triggerThreshold: 0.05,
+      invertYAxis: true,
+      stickSensitivity: 1.2
+    });
+    
+    // Set up FPS controls
+    await controller.setBinding("right_trigger", "attack", { analog: true });
+    await controller.setBinding("left_trigger", "use", { analog: true });
+    await controller.setBinding("a_button", "jump");
+    await controller.setBinding("b_button", "sneak");
+    await controller.setBinding("right_bumper", "sprint");
+    await controller.setBinding("y_button", "inventory");
+    
+    console.log("FPS controller layout configured!");
+  }
+}
+
+setupFPSLayout();
 ```
 
 ---

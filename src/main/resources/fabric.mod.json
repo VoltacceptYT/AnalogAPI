@@ -3,17 +3,17 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "API mod that exposes analog keyboard / movement state and lets external applications drive the player via a localhost HTTP API.",
+  "description": "Controller support mod that provides comprehensive gamepad functionality with configurable button mappings and real-time remapping via HTTP API.",
   "authors": [
     "verotek",
     "voltaccept"
   ],
   "contact": {
-    "issues": "https://github.com/lvoegl/analogmovement-mc/issues",
-    "sources": "https://github.com/lvoegl/analogmovement-mc"
+    "issues": "https://github.com/VoltacceptYT/AnalogAPI/issues",
+    "sources": "https://github.com/VoltacceptYT/AnalogAPI"
   },
   "license": "GPL-2.0-or-later",
-  "icon": "analog_api-128x.svg",
+  "icon": "logo.png",
   "environment": "client",
   "entrypoints": {
     "client": [
