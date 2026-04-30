@@ -54,12 +54,6 @@ public final class ControllerManager {
 
     public void setControllerConnected(boolean connected) {
         this.controllerConnected = connected;
-        if (connected) {
-            LOGGER.info("Controller connected");
-        } else {
-            LOGGER.info("Controller disconnected");
-            clearControllerInput();
-        }
     }
 
     public boolean isControllerInputEnabled() {
@@ -173,5 +167,93 @@ public final class ControllerManager {
 
     public boolean isControllerDriving() {
         return controllerVirtualInput.get() != null;
+    }
+    
+    /**
+     * Get detailed controller status information.
+     */
+    public String getControllerStatus() {
+        if (!controllerConnected) {
+            return "No controller connected";
+        }
+        
+        ControllerInput input = currentInput.get();
+        String drivingStatus = isControllerDriving() ? "driving" : "idle";
+        String enabledStatus = controllerInputEnabled ? "enabled" : "disabled";
+        
+        return String.format("Controller %s, input %s, currently %s", 
+                           enabledStatus, drivingStatus, 
+                           input != null && !input.isEmpty() ? "active" : "idle");
+    }
+    
+    /**
+     * Apply a configuration preset.
+     */
+    public void applyPreset(String presetName) {
+        switch (presetName.toLowerCase()) {
+            case "fps" -> applyFPSPreset();
+            case "racing" -> applyRacingPreset();
+            case "platformer" -> applyPlatformerPreset();
+            case "default" -> config.resetToDefaults();
+            default -> throw new IllegalArgumentException("Unknown preset: " + presetName);
+        }
+        
+        config.validateAndClamp();
+    }
+    
+    private void applyFPSPreset() {
+        config.resetToDefaults();
+        // FPS-style bindings
+        config.bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.ATTACK, 0.1f);
+        config.bind(ControllerButton.LEFT_TRIGGER, ControllerAction.USE, 0.1f);
+        config.bind(ControllerButton.RIGHT_BUMPER, ControllerAction.SPRINT);
+        config.bind(ControllerButton.LEFT_BUMPER, ControllerAction.DROP_ITEM);
+        config.bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);
+        config.bind(ControllerButton.B_BUTTON, ControllerAction.SNEAK);
+        config.bind(ControllerButton.Y_BUTTON, ControllerAction.INVENTORY);
+        config.setStickSensitivity(1.2f);
+        config.setInvertYAxis(true);
+    }
+    
+    private void applyRacingPreset() {
+        config.resetToDefaults();
+        // Racing-style bindings
+        config.bind(ControllerButton.A_BUTTON, ControllerAction.SPRINT);
+        config.bind(ControllerButton.B_BUTTON, ControllerAction.SNEAK);
+        config.bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.USE, 0.1f);
+        config.setStickSensitivity(1.5f);
+        config.setLeftStickDeadzone(0.1f);
+        config.setRightStickDeadzone(0.1f);
+    }
+    
+    private void applyPlatformerPreset() {
+        config.resetToDefaults();
+        // Platformer-style bindings
+        config.bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);
+        config.bind(ControllerButton.RIGHT_BUMPER, ControllerAction.SPRINT);
+        config.bind(ControllerButton.LEFT_TRIGGER, ControllerAction.ATTACK, 0.1f);
+        config.setStickSensitivity(0.9f);
+        config.setLeftStickDeadzone(0.2f);
+    }
+    
+    /**
+     * Get controller input statistics.
+     */
+    public String getInputStats() {
+        ControllerInput input = currentInput.get();
+        if (input == null) {
+            return "No input data";
+        }
+        
+        int activeButtons = 0;
+        for (boolean pressed : input.buttonStates) {
+            if (pressed) activeButtons++;
+        }
+        
+        return String.format("Buttons: %d active, Sticks: L[%.2f,%.2f] R[%.2f,%.2f], " +
+                           "Triggers: L[%.2f] R[%.2f]",
+                           activeButtons, input.leftStickX, input.leftStickY,
+                           input.rightStickX, input.rightStickY,
+                           input.leftTrigger, input.rightTrigger);
     }
 }

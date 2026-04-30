@@ -91,4 +91,88 @@ public final class ControllerConfig {
         sb.append("]}");
         return sb.toString();
     }
+    
+    /**
+     * Load configuration from JSON string.
+     */
+    public static ControllerConfig fromJson(String json) {
+        ControllerConfig config = new ControllerConfig();
+        
+        // Simple JSON parsing for basic settings
+        // In a real implementation, you'd use a proper JSON library
+        if (json.contains("\"leftStickDeadzone\"")) {
+            int start = json.indexOf("\"leftStickDeadzone\":") + 19;
+            int end = json.indexOf(",", start);
+            if (end == -1) end = json.indexOf("}", start);
+            try {
+                config.setLeftStickDeadzone(Float.parseFloat(json.substring(start, end)));
+            } catch (Exception ignored) {}
+        }
+        
+        if (json.contains("\"rightStickDeadzone\"")) {
+            int start = json.indexOf("\"rightStickDeadzone\":") + 20;
+            int end = json.indexOf(",", start);
+            if (end == -1) end = json.indexOf("}", start);
+            try {
+                config.setRightStickDeadzone(Float.parseFloat(json.substring(start, end)));
+            } catch (Exception ignored) {}
+        }
+        
+        if (json.contains("\"triggerThreshold\"")) {
+            int start = json.indexOf("\"triggerThreshold\":") + 18;
+            int end = json.indexOf(",", start);
+            if (end == -1) end = json.indexOf("}", start);
+            try {
+                config.setTriggerThreshold(Float.parseFloat(json.substring(start, end)));
+            } catch (Exception ignored) {}
+        }
+        
+        if (json.contains("\"invertYAxis\"")) {
+            config.setInvertYAxis(json.contains("\"invertYAxis\":true"));
+        }
+        
+        if (json.contains("\"stickSensitivity\"")) {
+            int start = json.indexOf("\"stickSensitivity\":") + 19;
+            int end = json.indexOf(",", start);
+            if (end == -1) end = json.indexOf("}", start);
+            try {
+                config.setStickSensitivity(Float.parseFloat(json.substring(start, end)));
+            } catch (Exception ignored) {}
+        }
+        
+        return config;
+    }
+    
+    /**
+     * Reset to default configuration.
+     */
+    public void resetToDefaults() {
+        buttonBindings.clear();
+        setupDefaultBindings();
+        leftStickDeadzone = 0.15f;
+        rightStickDeadzone = 0.15f;
+        triggerThreshold = 0.1f;
+        invertYAxis = false;
+        stickSensitivity = 1.0f;
+    }
+    
+    /**
+     * Validate configuration values and clamp them to acceptable ranges.
+     */
+    public void validateAndClamp() {
+        leftStickDeadzone = Math.max(0f, Math.min(1f, leftStickDeadzone));
+        rightStickDeadzone = Math.max(0f, Math.min(1f, rightStickDeadzone));
+        triggerThreshold = Math.max(0f, Math.min(1f, triggerThreshold));
+        stickSensitivity = Math.max(0.1f, Math.min(3f, stickSensitivity));
+    }
+    
+    /**
+     * Get a summary of the current configuration.
+     */
+    public String getSummary() {
+        return String.format("ControllerConfig: %d bindings, deadzones=[%.2f,%.2f], " +
+                           "threshold=%.2f, invertY=%b, sensitivity=%.1f",
+                           buttonBindings.size(), leftStickDeadzone, rightStickDeadzone,
+                           triggerThreshold, invertYAxis, stickSensitivity);
+    }
 }

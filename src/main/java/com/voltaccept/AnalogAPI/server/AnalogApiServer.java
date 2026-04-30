@@ -42,6 +42,9 @@ public final class AnalogApiServer {
     server.createContext("/api/controller", new ControllerHandler());
     server.createContext("/api/controller/bindings", new ControllerBindingsHandler());
     server.createContext("/api/controller/config", new ControllerConfigHandler());
+    server.createContext("/api/controller/info", new ControllerInfoHandler());
+    server.createContext("/api/controller/presets", new ControllerPresetsHandler());
+    server.createContext("/api/controller/status", new ControllerStatusHandler());
     server.createContext("/", new StaticFileHandler("/web", "index.html"));
 
     server.start();
@@ -398,6 +401,84 @@ public final class AnalogApiServer {
 
     private static boolean parseBool(String v) {
       return v != null && (v.equalsIgnoreCase("true") || v.equals("1"));
+    }
+  }
+
+  private static final class ControllerInfoHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
+        writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+        return;
+      }
+      
+      ControllerPoller poller = ControllerPoller.getInstance();
+      String info = poller.getControllerInfo();
+      String[] connected = poller.getConnectedControllers();
+      
+      String response = "{\"info\":\"" + info.replace("\"", "\\\"") + "\",\"connected\":[";
+      for (int i = 0; i < connected.length; i++) {
+        if (i > 0) response += ",";
+        response += "\"" + connected[i].replace("\"", "\\\"") + "\"";
+      }
+      response += "]}";
+      
+      writeJson(ex, 200, response);
+    }
+  }
+
+  private static final class ControllerPresetsHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      String method = ex.getRequestMethod().toUpperCase();
+      ControllerManager manager = ControllerManager.getInstance();
+
+      switch (method) {
+        case "GET" -> {
+          String response = "{\"presets\":[\"fps\",\"racing\",\"platformer\",\"default\"]}";
+          writeJson(ex, 200, response);
+        }
+        case "POST" -> {
+          try {
+            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
+            String preset = fields.get("preset");
+            
+            if (preset == null) {
+              writeJson(ex, 400, "{\"error\":\"missing_field\",\"message\":\"preset required\"}");
+              return;
+            }
+            
+            manager.applyPreset(preset);
+            writeJson(ex, 200, "{\"success\":true,\"preset\":\"" + preset + "\"}");
+          } catch (IllegalArgumentException e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_preset\",\"message\":\"" + e.getMessage().replace("\"", "'") + "\"}");
+          } catch (Exception e) {
+            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\"" + e.getMessage().replace("\"", "'") + "\"}");
+          }
+        }
+        default -> writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+      }
+    }
+  }
+
+  private static final class ControllerStatusHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange ex) throws IOException {
+      if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
+        writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
+        return;
+      }
+      
+      ControllerManager manager = ControllerManager.getInstance();
+      String status = manager.getControllerStatus();
+      String stats = manager.getInputStats();
+      String configSummary = manager.getConfig().getSummary();
+      
+      String response = "{\"status\":\"" + status.replace("\"", "\\\"") + "\","
+          + "\"stats\":\"" + stats.replace("\"", "\\\"") + "\","
+          + "\"config\":\"" + configSummary.replace("\"", "\\\"") + "\"}";
+      
+      writeJson(ex, 200, response);
     }
   }
 
