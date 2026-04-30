@@ -212,7 +212,7 @@ public final class ControllerPoller {
         
         String name = GLFW.glfwGetJoystickName(activeController);
         FloatBuffer axes = GLFW.glfwGetJoystickAxes(activeController);
-        ByteBuffer buttons = GLFW.glfwJoystickButtons(activeController);
+        ByteBuffer buttons = GLFW.glfwGetJoystickButtons(activeController);
         
         return String.format("Controller: %s, Axes: %d, Buttons: %d", 
                            name, axes != null ? axes.capacity() : 0, 
@@ -284,7 +284,7 @@ public final class ControllerPoller {
         }
         
         try {
-            ByteBuffer buttons = GLFW.glfwJoystickButtons(activeController);
+            ByteBuffer buttons = GLFW.glfwGetJoystickButtons(activeController);
             if (buttons == null || button.ordinal() >= buttons.capacity()) {
                 return false;
             }
