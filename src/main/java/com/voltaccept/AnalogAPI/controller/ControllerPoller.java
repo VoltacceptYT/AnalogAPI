@@ -100,13 +100,36 @@ public final class ControllerPoller {
      * Find the first connected controller.
      */
     private int findConnectedController() {
+        // Check if GLFW is initialized
+        if (!isGLFWInitialized()) {
+            return -1;
+        }
+        
         // Check all 4 possible joystick slots
         for (int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_4; i++) {
-            if (GLFW.glfwJoystickPresent(i)) {
-                return i;
+            try {
+                if (GLFW.glfwJoystickPresent(i)) {
+                    return i;
+                }
+            } catch (IllegalStateException e) {
+                // GLFW not yet initialized, return -1
+                return -1;
             }
         }
         return -1; // No controller found
+    }
+    
+    /**
+     * Check if GLFW is properly initialized.
+     */
+    private boolean isGLFWInitialized() {
+        try {
+            // Try a simple GLFW call to check if it's initialized
+            GLFW.glfwGetTime();
+            return true;
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
     
     /**
@@ -114,6 +137,10 @@ public final class ControllerPoller {
      */
     private ControllerInput readControllerInput(int joystickId) {
         try {
+            if (!isGLFWInitialized()) {
+                return null;
+            }
+            
             FloatBuffer axes = GLFW.glfwGetJoystickAxes(joystickId);
             ByteBuffer buttons = GLFW.glfwGetJoystickButtons(joystickId);
             
@@ -210,13 +237,21 @@ public final class ControllerPoller {
             return "No controller connected";
         }
         
-        String name = GLFW.glfwGetJoystickName(activeController);
-        FloatBuffer axes = GLFW.glfwGetJoystickAxes(activeController);
-        ByteBuffer buttons = GLFW.glfwGetJoystickButtons(activeController);
+        if (!isGLFWInitialized()) {
+            return "GLFW not initialized";
+        }
         
-        return String.format("Controller: %s, Axes: %d, Buttons: %d", 
-                           name, axes != null ? axes.capacity() : 0, 
-                           buttons != null ? buttons.capacity() : 0);
+        try {
+            String name = GLFW.glfwGetJoystickName(activeController);
+            FloatBuffer axes = GLFW.glfwGetJoystickAxes(activeController);
+            ByteBuffer buttons = GLFW.glfwGetJoystickButtons(activeController);
+            
+            return String.format("Controller: %s, Axes: %d, Buttons: %d", 
+                               name, axes != null ? axes.capacity() : 0, 
+                               buttons != null ? buttons.capacity() : 0);
+        } catch (IllegalStateException e) {
+            return "GLFW error: " + e.getMessage();
+        }
     }
     
     /**
@@ -226,7 +261,14 @@ public final class ControllerPoller {
         if (slot < GLFW_JOYSTICK_1 || slot > GLFW_JOYSTICK_4) {
             return false;
         }
-        return GLFW.glfwJoystickPresent(slot);
+        if (!isGLFWInitialized()) {
+            return false;
+        }
+        try {
+            return GLFW.glfwJoystickPresent(slot);
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
     
     /**
@@ -236,7 +278,11 @@ public final class ControllerPoller {
         if (!isControllerConnected(slot)) {
             return null;
         }
-        return GLFW.glfwGetJoystickName(slot);
+        try {
+            return GLFW.glfwGetJoystickName(slot);
+        } catch (IllegalStateException e) {
+            return null;
+        }
     }
     
     /**
@@ -245,12 +291,21 @@ public final class ControllerPoller {
     public String[] getConnectedControllers() {
         java.util.List<String> controllers = new java.util.ArrayList<>();
         
+        if (!isGLFWInitialized()) {
+            return controllers.toArray(new String[0]);
+        }
+        
         for (int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_4; i++) {
-            if (GLFW.glfwJoystickPresent(i)) {
-                String name = GLFW.glfwGetJoystickName(i);
-                if (name != null) {
-                    controllers.add(String.format("Slot %d: %s", i, name));
+            try {
+                if (GLFW.glfwJoystickPresent(i)) {
+                    String name = GLFW.glfwGetJoystickName(i);
+                    if (name != null) {
+                        controllers.add(String.format("Slot %d: %s", i, name));
+                    }
                 }
+            } catch (IllegalStateException e) {
+                // Skip this slot if GLFW fails
+                continue;
             }
         }
         
