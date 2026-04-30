@@ -17,17 +17,21 @@ public final class ControllerConfig {
     }
 
     private void setupDefaultBindings() {
-        // Standard Xbox controller layout
-        bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);
-        bind(ControllerButton.B_BUTTON, ControllerAction.SNEAK);
-        bind(ControllerButton.X_BUTTON, ControllerAction.ATTACK);
-        bind(ControllerButton.Y_BUTTON, ControllerAction.INVENTORY);
-        bind(ControllerButton.LEFT_BUMPER, ControllerAction.DROP_ITEM);
-        bind(ControllerButton.RIGHT_BUMPER, ControllerAction.SPRINT);
-        bind(ControllerButton.LEFT_TRIGGER, ControllerAction.USE, 0.1f);
-        bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.ATTACK, 0.1f);
-        bind(ControllerButton.START_BUTTON, ControllerAction.PAUSE);
-        bind(ControllerButton.BACK_BUTTON, ControllerAction.INVENTORY);
+        // Legacy Console Edition default layout
+        bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);           // A = Jump
+        bind(ControllerButton.B_BUTTON, ControllerAction.DROP_ITEM);       // B = Drop Item
+        bind(ControllerButton.X_BUTTON, ControllerAction.INVENTORY);       // X = Inventory
+        bind(ControllerButton.Y_BUTTON, ControllerAction.CHANGE_PERSPECTIVE); // Y = Change Perspective
+        bind(ControllerButton.LEFT_BUMPER, ControllerAction.ATTACK);      // LB = Attack
+        bind(ControllerButton.RIGHT_BUMPER, ControllerAction.USE);        // RB = Use/Place Block
+        bind(ControllerButton.LEFT_TRIGGER, ControllerAction.SNEAK);      // LT = Sneak
+        bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.SPRINT);     // RT = Sprint
+        bind(ControllerButton.BACK_BUTTON, ControllerAction.PAUSE);        // Back = Pause
+        bind(ControllerButton.START_BUTTON, ControllerAction.INVENTORY);   // Start = Inventory
+        bind(ControllerButton.DPAD_UP, ControllerAction.FORWARD);          // D-Pad Up = Forward
+        bind(ControllerButton.DPAD_DOWN, ControllerAction.BACKWARD);       // D-Pad Down = Backward
+        bind(ControllerButton.DPAD_LEFT, ControllerAction.LEFT);           // D-Pad Left = Left
+        bind(ControllerButton.DPAD_RIGHT, ControllerAction.RIGHT);         // D-Pad Right = Right
     }
 
     public void bind(ControllerButton button, ControllerAction action) {

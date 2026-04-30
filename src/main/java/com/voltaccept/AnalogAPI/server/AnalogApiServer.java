@@ -44,7 +44,6 @@ public final class AnalogApiServer {
     server.createContext("/api/controller/bindings", new ControllerBindingsHandler());
     server.createContext("/api/controller/config", new ControllerConfigHandler());
     server.createContext("/api/controller/info", new ControllerInfoHandler());
-    server.createContext("/api/controller/presets", new ControllerPresetsHandler());
     server.createContext("/api/controller/status", new ControllerStatusHandler());
     server.createContext("/", new StaticFileHandler("/web", "index.html"));
 
@@ -428,40 +427,7 @@ public final class AnalogApiServer {
     }
   }
 
-  private static final class ControllerPresetsHandler implements HttpHandler {
-    @Override
-    public void handle(HttpExchange ex) throws IOException {
-      String method = ex.getRequestMethod().toUpperCase();
-      ControllerManager manager = ControllerManager.getInstance();
-
-      switch (method) {
-        case "GET" -> {
-          String response = "{\"presets\":[\"fps\",\"racing\",\"platformer\",\"default\"]}";
-          writeJson(ex, 200, response);
-        }
-        case "POST" -> {
-          try {
-            Map<String, String> fields = JsonLite.parseFlat(readBody(ex));
-            String preset = fields.get("preset");
-            
-            if (preset == null) {
-              writeJson(ex, 400, "{\"error\":\"missing_field\",\"message\":\"preset required\"}");
-              return;
-            }
-            
-            manager.applyPreset(preset);
-            writeJson(ex, 200, "{\"success\":true,\"preset\":\"" + preset + "\"}");
-          } catch (IllegalArgumentException e) {
-            writeJson(ex, 400, "{\"error\":\"invalid_preset\",\"message\":\"" + e.getMessage().replace("\"", "'") + "\"}");
-          } catch (Exception e) {
-            writeJson(ex, 400, "{\"error\":\"invalid_json\",\"message\":\"" + e.getMessage().replace("\"", "'") + "\"}");
-          }
-        }
-        default -> writeJson(ex, 405, "{\"error\":\"method_not_allowed\"}");
-      }
-    }
-  }
-
+  
   private static final class ControllerStatusHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {

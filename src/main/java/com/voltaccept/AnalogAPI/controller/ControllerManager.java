@@ -84,15 +84,12 @@ public final class ControllerManager {
         boolean sneak = false;
         boolean sprint = false;
 
-        // Process analog sticks
+        // Apply deadzones and sensitivity
         float leftX = applyDeadzone(input.leftStickX, config.getLeftStickDeadzone());
         float leftY = applyDeadzone(input.leftStickY, config.getLeftStickDeadzone());
         
-        if (config.isInvertYAxis()) {
-            leftY = -leftY;
-        }
-
-        forward = leftY * config.getStickSensitivity();
+        // Map analog stick to movement (invert both axes for standard controller behavior)
+        forward = -leftY * config.getStickSensitivity();
         sideways = leftX * config.getStickSensitivity();
 
         // Process button bindings
@@ -138,6 +135,7 @@ public final class ControllerManager {
             case JUMP -> new MovementResult(forward, sideways, true, sneak, sprint);
             case SNEAK -> new MovementResult(forward, sideways, jump, true, sprint);
             case SPRINT -> new MovementResult(forward, sideways, jump, sneak, true);
+            case CHANGE_PERSPECTIVE -> new MovementResult(forward, sideways, jump, sneak, sprint); // No movement change
             default -> new MovementResult(forward, sideways, jump, sneak, sprint);
         };
     }
@@ -186,56 +184,7 @@ public final class ControllerManager {
                            input != null && !input.isEmpty() ? "active" : "idle");
     }
     
-    /**
-     * Apply a configuration preset.
-     */
-    public void applyPreset(String presetName) {
-        switch (presetName.toLowerCase()) {
-            case "fps" -> applyFPSPreset();
-            case "racing" -> applyRacingPreset();
-            case "platformer" -> applyPlatformerPreset();
-            case "default" -> config.resetToDefaults();
-            default -> throw new IllegalArgumentException("Unknown preset: " + presetName);
-        }
         
-        config.validateAndClamp();
-    }
-    
-    private void applyFPSPreset() {
-        config.resetToDefaults();
-        // FPS-style bindings
-        config.bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.ATTACK, 0.1f);
-        config.bind(ControllerButton.LEFT_TRIGGER, ControllerAction.USE, 0.1f);
-        config.bind(ControllerButton.RIGHT_BUMPER, ControllerAction.SPRINT);
-        config.bind(ControllerButton.LEFT_BUMPER, ControllerAction.DROP_ITEM);
-        config.bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);
-        config.bind(ControllerButton.B_BUTTON, ControllerAction.SNEAK);
-        config.bind(ControllerButton.Y_BUTTON, ControllerAction.INVENTORY);
-        config.setStickSensitivity(1.2f);
-        config.setInvertYAxis(true);
-    }
-    
-    private void applyRacingPreset() {
-        config.resetToDefaults();
-        // Racing-style bindings
-        config.bind(ControllerButton.A_BUTTON, ControllerAction.SPRINT);
-        config.bind(ControllerButton.B_BUTTON, ControllerAction.SNEAK);
-        config.bind(ControllerButton.RIGHT_TRIGGER, ControllerAction.USE, 0.1f);
-        config.setStickSensitivity(1.5f);
-        config.setLeftStickDeadzone(0.1f);
-        config.setRightStickDeadzone(0.1f);
-    }
-    
-    private void applyPlatformerPreset() {
-        config.resetToDefaults();
-        // Platformer-style bindings
-        config.bind(ControllerButton.A_BUTTON, ControllerAction.JUMP);
-        config.bind(ControllerButton.RIGHT_BUMPER, ControllerAction.SPRINT);
-        config.bind(ControllerButton.LEFT_TRIGGER, ControllerAction.ATTACK, 0.1f);
-        config.setStickSensitivity(0.9f);
-        config.setLeftStickDeadzone(0.2f);
-    }
-    
     /**
      * Get controller input statistics.
      */

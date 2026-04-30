@@ -13,7 +13,8 @@ public enum ControllerAction {
     INVENTORY("Inventory"),
     DROP_ITEM("Drop Item"),
     CHAT("Chat"),
-    PAUSE("Pause");
+    PAUSE("Pause"),
+    CHANGE_PERSPECTIVE("Change Perspective");
 
     private final String displayName;
 
