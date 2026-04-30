@@ -5,7 +5,7 @@ import com.voltaccept.AnalogAPI.server.AnalogApiServer;
 import com.voltaccept.AnalogAPI.controller.ControllerManager;
 import com.voltaccept.AnalogAPI.controller.ControllerPoller;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public final class AnalogApiMod implements ClientModInitializer {
       LOGGER.error("Failed to start AnalogAPI HTTP server", e);
     }
 
-    MinecraftClient.getInstance().execute(() -> {
+    Minecraft.getInstance().execute(() -> {
       ControllerPoller.getInstance().start();
       LOGGER.info("AnalogAPI Controller Support mod initialized with controller polling");
     });
