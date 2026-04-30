@@ -10,9 +10,23 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-record MovementResult(float forward, float sideways, boolean jump, boolean sneak, boolean sprint) {}
-
 public final class ControllerManager {
+    
+    public static class MovementResult {
+        public final float forward;
+        public final float sideways;
+        public final boolean jump;
+        public final boolean sneak;
+        public final boolean sprint;
+
+        public MovementResult(float forward, float sideways, boolean jump, boolean sneak, boolean sprint) {
+            this.forward = forward;
+            this.sideways = sideways;
+            this.jump = jump;
+            this.sneak = sneak;
+            this.sprint = sprint;
+        }
+    }
     private static final Logger LOGGER = LoggerFactory.getLogger("AnalogAPI");
     private static final ControllerManager INSTANCE = new ControllerManager();
 
