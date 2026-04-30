@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.voltaccept.AnalogAPI.api.AnalogAPI;
 import com.voltaccept.AnalogAPI.api.MovementState;
 import com.voltaccept.AnalogAPI.api.VirtualInput;
+import com.voltaccept.AnalogAPI.controller.*;
 import com.voltaccept.AnalogAPI.controller.ControllerManager;
 import com.voltaccept.AnalogAPI.controller.ControllerButton;
 import com.voltaccept.AnalogAPI.controller.ControllerAction;

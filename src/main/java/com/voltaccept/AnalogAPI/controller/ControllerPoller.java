@@ -115,7 +115,7 @@ public final class ControllerPoller {
     private ControllerInput readControllerInput(int joystickId) {
         try {
             FloatBuffer axes = GLFW.glfwGetJoystickAxes(joystickId);
-            ByteBuffer buttons = GLFW.glfwJoystickButtons(joystickId);
+            ByteBuffer buttons = GLFW.glfwGetJoystickButtons(joystickId);
             
             if (axes == null || buttons == null) {
                 return null;
